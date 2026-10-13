@@ -1,4 +1,3 @@
-
 -- 1) SP INSERT
 GO
 CREATE OR ALTER PROCEDURE spInsertEquipo

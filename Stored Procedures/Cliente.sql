@@ -1,12 +1,13 @@
-
 -- 1) SP INSERT
 GO
 CREATE OR ALTER PROCEDURE spInsertCliente
     @Nombre VARCHAR(100),
     @Apellido VARCHAR(100),
     @Telefono VARCHAR(15),
-    @EstadoClienteId INT = 1,
+    @TipoDocumento VARCHAR(20),
+    @EstadoClienteId INT,
     @DUI VARCHAR(10) = NULL,
+    @CarnetExtranjero VARCHAR(20) = NULL,
     @Correo VARCHAR(100) = NULL,
     @FechaRegistro DATETIME = NULL
 AS
@@ -16,23 +17,26 @@ BEGIN
     INSERT INTO Cliente (
         Nombre,
         Apellido,
-        DUI,
         Telefono,
         Correo,
+        TipoDocumento,
+        DUI,
+        CarnetExtranjero,
         FechaRegistro,
         EstadoClienteId
     )
     VALUES (
         @Nombre,
         @Apellido,
-        @DUI,
         @Telefono,
         @Correo,
+        @TipoDocumento,
+        @DUI,
+        @CarnetExtranjero,
         ISNULL(@FechaRegistro, GETDATE()),
         @EstadoClienteId
     );
 END;
-GO
 
 -- 2) SP UPDATE
 GO
@@ -41,8 +45,10 @@ CREATE OR ALTER PROCEDURE spUpdateCliente
     @Nombre VARCHAR(100),
     @Apellido VARCHAR(100),
     @Telefono VARCHAR(15),
+    @TipoDocumento VARCHAR(20),
     @EstadoClienteId INT,
     @DUI VARCHAR(10) = NULL,
+    @CarnetExtranjero VARCHAR(20) = NULL,
     @Correo VARCHAR(100) = NULL
 AS
 BEGIN
@@ -51,9 +57,11 @@ BEGIN
     UPDATE Cliente
     SET Nombre = @Nombre,
         Apellido = @Apellido,
-        DUI = @DUI,
         Telefono = @Telefono,
         Correo = @Correo,
+        TipoDocumento = @TipoDocumento,
+        DUI = @DUI,
+        CarnetExtranjero = @CarnetExtranjero,
         EstadoClienteId = @EstadoClienteId
     WHERE ClienteId = @ClienteId;
 END;
@@ -82,9 +90,11 @@ BEGIN
         ClienteId,
         Nombre,
         Apellido,
-        DUI,
         Telefono,
         Correo,
+        TipoDocumento,
+        DUI,
+        CarnetExtranjero,
         FechaRegistro,
         EstadoClienteId
     FROM Cliente
@@ -103,9 +113,11 @@ BEGIN
         ClienteId,
         Nombre,
         Apellido,
-        DUI,
         Telefono,
         Correo,
+        TipoDocumento,
+        DUI,
+        CarnetExtranjero,
         FechaRegistro,
         EstadoClienteId
     FROM Cliente

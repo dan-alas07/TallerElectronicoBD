@@ -1,23 +1,16 @@
-
 -- 1) SP INSERT
 GO
 CREATE OR ALTER PROCEDURE spInsertRol
     @Nombre VARCHAR(50),
-    @Descripcion VARCHAR(250) = NULL,
-    @EstadoRolId INT = 1
+    @Descripcion VARCHAR(250) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    INSERT INTO Rol (
-        Nombre,
-        Descripcion,
-        EstadoRolId
-    )
+    INSERT INTO Rol (Nombre,Descripcion)
     VALUES (
         @Nombre,
-        @Descripcion,
-        @EstadoRolId
+        @Descripcion
     );
 END;
 
@@ -26,16 +19,14 @@ GO
 CREATE OR ALTER PROCEDURE spUpdateRol
     @RolId INT,
     @Nombre VARCHAR(50),
-    @Descripcion VARCHAR(250) = NULL,
-    @EstadoRolId INT
+    @Descripcion VARCHAR(250) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
     UPDATE Rol
     SET Nombre = @Nombre,
-        Descripcion = @Descripcion,
-        EstadoRolId = @EstadoRolId
+        Descripcion = @Descripcion
     WHERE RolId = @RolId;
 END;
 
@@ -48,7 +39,7 @@ BEGIN
     SET NOCOUNT ON;
 
     UPDATE Rol
-    SET EstadoRolId = 2
+    SET Activo = 0
     WHERE RolId = @RolId;
 END;
 
@@ -63,7 +54,7 @@ BEGIN
         RolId,
         Nombre,
         Descripcion,
-        EstadoRolId
+        Activo
     FROM Rol
     ORDER BY RolId ASC;
 END;
@@ -80,7 +71,7 @@ BEGIN
         RolId,
         Nombre,
         Descripcion,
-        EstadoRolId
+        Activo
     FROM Rol
     WHERE RolId = @RolId;
 END;

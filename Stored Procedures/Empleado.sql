@@ -1,4 +1,3 @@
-
 -- 1) SP INSERT
 GO
 CREATE OR ALTER PROCEDURE spInsertEmpleado
@@ -7,24 +6,24 @@ CREATE OR ALTER PROCEDURE spInsertEmpleado
     @DUI VARCHAR(10),
     @Telefono VARCHAR(9) = NULL,
     @Correo VARCHAR(100),
+    @Direccion VARCHAR(255),
     @EstadoEmpleadoId INT = 1,
     @FechaContratacion DATE = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    INSERT INTO Empleado
-        (Nombre, Apellido, DUI, Telefono, Correo, EstadoEmpleadoId, FechaContratacion)
-    VALUES
-        (
-            @Nombre,
-            @Apellido,
-            @DUI,
-            @Telefono,
-            @Correo,
-            @EstadoEmpleadoId,
-            ISNULL(@FechaContratacion, GETDATE())
-        );
+    INSERT INTO Empleado (Nombre, Apellido, DUI, Telefono, Correo, Direccion, EstadoEmpleadoId, FechaContratacion)
+    VALUES (
+        @Nombre,
+        @Apellido,
+        @DUI,
+        @Telefono,
+        @Correo,
+        @Direccion,
+        @EstadoEmpleadoId,
+        ISNULL(@FechaContratacion, GETDATE())
+    );
 END;
 
 -- 2) SP UPDATE
@@ -36,6 +35,7 @@ CREATE OR ALTER PROCEDURE spUpdateEmpleado
     @DUI VARCHAR(10),
     @Telefono VARCHAR(9) = NULL,
     @Correo VARCHAR(100),
+    @Direccion VARCHAR(255),
     @EstadoEmpleadoId INT,
     @FechaContratacion DATE
 AS
@@ -48,6 +48,7 @@ BEGIN
         DUI = @DUI,
         Telefono = @Telefono,
         Correo = @Correo,
+        Direccion = @Direccion,
         EstadoEmpleadoId = @EstadoEmpleadoId,
         FechaContratacion = @FechaContratacion
     WHERE EmpleadoId = @EmpleadoId;
@@ -80,6 +81,7 @@ BEGIN
         DUI,
         Telefono,
         Correo,
+        Direccion,
         EstadoEmpleadoId,
         FechaContratacion
     FROM Empleado
@@ -101,6 +103,7 @@ BEGIN
         DUI,
         Telefono,
         Correo,
+        Direccion,
         EstadoEmpleadoId,
         FechaContratacion
     FROM Empleado

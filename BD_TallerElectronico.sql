@@ -4,72 +4,61 @@ GO
 USE TallerElectronico;
 GO
 
--- Estado para los Roles
-CREATE TABLE EstadoRol (
-    EstadoRolId INT PRIMARY KEY IDENTITY,
-    Nombre VARCHAR(50) NOT NULL UNIQUE,
-    Activo BIT NOT NULL DEFAULT 1
-);
-
--- Estado para los Empleados
 CREATE TABLE EstadoEmpleado (
     EstadoEmpleadoId INT PRIMARY KEY IDENTITY,
     Nombre VARCHAR(50) NOT NULL UNIQUE,
     Activo BIT NOT NULL DEFAULT 1
 );
 
--- Estado para la cuenta de Usuario
 CREATE TABLE EstadoUsuario (
     EstadoUsuarioId INT PRIMARY KEY IDENTITY,
     Nombre VARCHAR(50) NOT NULL UNIQUE,
     Activo BIT NOT NULL DEFAULT 1
 );
 
--- Estado para los Equipos
 CREATE TABLE EstadoEquipo (
     EstadoEquipoId INT PRIMARY KEY IDENTITY,
     Nombre VARCHAR(50) NOT NULL UNIQUE,
     Activo BIT NOT NULL DEFAULT 1
 );
 
--- Estado para los Repuestos
-CREATE TABLE EstadoRepuesto (
-    EstadoRepuestoId INT PRIMARY KEY IDENTITY,
+CREATE TABLE EstadoProducto (
+    EstadoProductoId INT PRIMARY KEY IDENTITY,
     Nombre VARCHAR(50) NOT NULL UNIQUE,
     Activo BIT NOT NULL DEFAULT 1
 );
 
--- Estado para los Clientes
 CREATE TABLE EstadoCliente (
     EstadoClienteId INT PRIMARY KEY IDENTITY,
     Nombre VARCHAR(50) NOT NULL UNIQUE,
     Activo BIT NOT NULL DEFAULT 1
 );
 
--- Tipos de Equipo (Categorías)
+CREATE TABLE EstadoProveedor (
+    EstadoProveedorId INT PRIMARY KEY IDENTITY,
+    Nombre VARCHAR(50) NOT NULL UNIQUE,
+    Activo BIT NOT NULL DEFAULT 1
+);
+
 CREATE TABLE TipoEquipo (
     TipoEquipoId INT PRIMARY KEY IDENTITY,
     Nombre VARCHAR(100) NOT NULL UNIQUE,
     Activo BIT NOT NULL DEFAULT 1
 );
 
--- Marca
 CREATE TABLE Marca (
     MarcaId INT PRIMARY KEY IDENTITY,
     Nombre VARCHAR(100) NOT NULL UNIQUE,
     Activo BIT NOT NULL DEFAULT 1
 );
 
--- Tabla Role
 CREATE TABLE Rol (
     RolId INT PRIMARY KEY IDENTITY,
     Nombre VARCHAR(50) NOT NULL UNIQUE,
     Descripcion VARCHAR(250) NULL,
-    EstadoRolId INT NOT NULL,
-    FOREIGN KEY (EstadoRolId) REFERENCES EstadoRol(EstadoRolId)
+    Activo BIT NOT NULL DEFAULT 1
 );
 
--- Tabla Empleado
 CREATE TABLE Empleado (
     EmpleadoId INT PRIMARY KEY IDENTITY,
     Nombre VARCHAR(50) NOT NULL,
@@ -77,12 +66,12 @@ CREATE TABLE Empleado (
     DUI VARCHAR(10) UNIQUE NOT NULL,
     Telefono VARCHAR(9) NULL,
     Correo VARCHAR(100) UNIQUE NOT NULL,
+    Direccion VARCHAR(255) NOT NULL,
     EstadoEmpleadoId INT NOT NULL,
     FechaContratacion DATE NOT NULL DEFAULT GETDATE(),
     FOREIGN KEY (EstadoEmpleadoId) REFERENCES EstadoEmpleado(EstadoEmpleadoId)
 );
 
--- Tabla Usuario
 CREATE TABLE Usuario (
     UsuarioId INT PRIMARY KEY IDENTITY,
     EmpleadoId INT UNIQUE NOT NULL,
@@ -95,21 +84,27 @@ CREATE TABLE Usuario (
     FOREIGN KEY (EstadoUsuarioId) REFERENCES EstadoUsuario(EstadoUsuarioId)
 );
 
--- Tabla Cliente
 CREATE TABLE Cliente (
     ClienteId INT PRIMARY KEY IDENTITY,
     Nombre VARCHAR(100) NOT NULL,
     Apellido VARCHAR(100) NOT NULL,
-    DUI VARCHAR(10) UNIQUE NULL,
     Telefono VARCHAR(15) NOT NULL,
     Correo VARCHAR(100) NULL,
+    TipoDocumento VARCHAR(20) NOT NULL CHECK (TipoDocumento IN ('DUI', 'CarnetExtranjero')),
+    DUI VARCHAR(10) NULL,
+    CarnetExtranjero VARCHAR(20) NULL,
     FechaRegistro DATETIME NOT NULL DEFAULT GETDATE(),
-    EstadoClienteId INT NOT NULL DEFAULT 1,
+    EstadoClienteId INT NOT NULL,
 
-    FOREIGN KEY (EstadoClienteId) REFERENCES EstadoCliente(EstadoClienteId)
+    FOREIGN KEY (EstadoClienteId) REFERENCES EstadoCliente(EstadoClienteId),
+
+    CONSTRAINT CK_Cliente_Documento CHECK (
+        (TipoDocumento = 'DUI' AND DUI IS NOT NULL AND CarnetExtranjero IS NULL)
+        OR
+        (TipoDocumento = 'CarnetExtranjero' AND CarnetExtranjero IS NOT NULL AND DUI IS NULL)
+    )
 );
 
--- Tabla Equipo
 CREATE TABLE Equipo (
     EquipoId INT PRIMARY KEY IDENTITY,
     CodigoSeguimiento VARCHAR(20) UNIQUE NOT NULL,
@@ -130,26 +125,40 @@ CREATE TABLE Equipo (
     FOREIGN KEY (TecnicoAsignadoId) REFERENCES Empleado(EmpleadoId)
 );
 
--- Tabla Repuesto
-CREATE TABLE Repuesto (
-    RepuestoId INT PRIMARY KEY IDENTITY,
+CREATE TABLE Proveedor (
+    ProveedorId INT PRIMARY KEY IDENTITY(1,1),
+    Nombre VARCHAR(100) NOT NULL,
+    TipoProveedor CHAR(2) NOT NULL CHECK (TipoProveedor IN ('PN', 'PJ')),
+    Telefono VARCHAR(15) NOT NULL,
+    Email VARCHAR(100) UNIQUE NOT NULL,
+    Direccion VARCHAR(255) NOT NULL,
+    DUI VARCHAR(10) NULL,
+    NIT VARCHAR(20) NULL,
+    NRC VARCHAR(20) NULL,
+    EstadoProveedorId INT NOT NULL,
+    FOREIGN KEY (EstadoProveedorId) REFERENCES EstadoProveedor(EstadoProveedorId)
+);
+
+CREATE TABLE Producto (
+    ProductoId INT PRIMARY KEY IDENTITY,
     Codigo VARCHAR(50) UNIQUE NOT NULL,
     Nombre VARCHAR(100) NOT NULL,
     Descripcion VARCHAR(250) NULL,
-    CantidadStock INT NOT NULL CHECK(CantidadStock > 0),
+    CantidadStock INT NOT NULL CHECK(CantidadStock >= 0),
     PrecioUnitario DECIMAL(10,2) NOT NULL CHECK(PrecioUnitario > 0.00),
-    EstadoRepuestoId INT NOT NULL,
-    FOREIGN KEY (EstadoRepuestoId) REFERENCES EstadoRepuesto(EstadoRepuestoId)
+    ProveedorId INT NOT NULL,
+    EstadoProductoId INT NOT NULL,
+    FOREIGN KEY (ProveedorId) REFERENCES Proveedor(ProveedorId),
+    FOREIGN KEY (EstadoProductoId) REFERENCES EstadoProducto(EstadoProductoId)
 );
 
--- Tabla DetalleRepuestoEquipo
-CREATE TABLE DetalleRepuestoEquipo (
-    DetalleId INT PRIMARY KEY IDENTITY,
+CREATE TABLE DetalleProductoEquipo (
+    DetalleProductoId INT PRIMARY KEY IDENTITY,
     EquipoId INT NOT NULL,
-    RepuestoId INT NOT NULL,
+    ProductoId INT NOT NULL,
     CantidadUtilizada INT NOT NULL CHECK (CantidadUtilizada > 0),
     PrecioAplicado DECIMAL(10,2) NOT NULL,
     FechaUso DATETIME DEFAULT GETDATE() NOT NULL,
     FOREIGN KEY (EquipoId) REFERENCES Equipo(EquipoId),
-    FOREIGN KEY (RepuestoId) REFERENCES Repuesto(RepuestoId)
+    FOREIGN KEY (ProductoId) REFERENCES Producto(ProductoId)
 );
