@@ -1,7 +1,7 @@
-CREATE DATABASE TallerElectronico;
+CREATE DATABASE TallerElectronicoBD;
 GO
 
-USE TallerElectronico;
+USE TallerElectronicoBD;
 GO
 
 CREATE TABLE EstadoReparacion (
