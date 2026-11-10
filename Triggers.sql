@@ -1,44 +1,50 @@
-GO
-CREATE OR ALTER TRIGGER TgAfterInsert_DetalleReparacion
+-- 1. TRIGGER PARA DETALLE REPARACION (Control de Stock y Recálculo del Total)
+CREATE OR ALTER TRIGGER Tg_DetalleReparacion_Stock_Total
 ON DetalleReparacion
-AFTER INSERT
+AFTER INSERT, UPDATE, DELETE
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- 1. Capturar el precio del producto
-    UPDATE d
-    SET d.PrecioUnitarioHistorico = p.PrecioUnitario
-    FROM DetalleReparacion d
-    INNER JOIN inserted i ON d.DetalleReparacionId = i.DetalleReparacionId
-    INNER JOIN Producto p ON i.ProductoId = p.ProductoId
-    WHERE d.PrecioUnitarioHistorico = 0.00;
+    ;WITH Movimientos AS (
 
-    -- 2. Descontar el stock en Producto
+        SELECT ProductoId, CantidadUtilizada AS Cantidad FROM inserted
+        UNION ALL
+
+        SELECT ProductoId, -CantidadUtilizada AS Cantidad FROM deleted
+    ),
+    Agrupado AS (
+        SELECT ProductoId, SUM(Cantidad) AS Variacion
+        FROM Movimientos
+        GROUP BY ProductoId
+    )
     UPDATE p
-    SET p.CantidadStock = p.CantidadStock - i.CantidadUtilizada
+    SET p.CantidadStock = p.CantidadStock - a.Variacion
     FROM Producto p
-    INNER JOIN inserted i ON p.ProductoId = i.ProductoId;
+    INNER JOIN Agrupado a ON p.ProductoId = a.ProductoId;
 
-    -- 3. Actualizar TotalReparacion (y auditar el cambio automáticamente)
+    ;WITH ReparacionesAfectadas AS (
+        SELECT ReparacionId FROM inserted
+        UNION
+        SELECT ReparacionId FROM deleted
+    )
     UPDATE r
     SET 
         r.TotalReparacion = r.CostoManoObra + ISNULL((
-            SELECT SUM(d.Subtotal) 
+            SELECT SUM(d.CantidadUtilizada * d.PrecioUnitarioHistorico) 
             FROM DetalleReparacion d 
             WHERE d.ReparacionId = r.ReparacionId
         ), 0.00),
-        r.UsuarioModificacionId = i.UsuarioCreacionId, -- El técnico que metió el repuesto
         r.FechaModificacion = GETDATE()
     FROM Reparacion r
-    INNER JOIN inserted i ON r.ReparacionId = i.ReparacionId;
+    INNER JOIN ReparacionesAfectadas ra ON r.ReparacionId = ra.ReparacionId;
 END;
 GO
 
--- 2. Tu trigger cuando cambia la Mano de Obra
+-- 2. TRIGGER PARA REPARACION (Recálculo cuando cambia Mano de Obra)
 CREATE OR ALTER TRIGGER TgAfterUpdate_ManoObraReparacion
 ON Reparacion
-AFTER INSERT, UPDATE
+AFTER UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -47,12 +53,14 @@ BEGIN
     BEGIN
         UPDATE r
         SET r.TotalReparacion = i.CostoManoObra + ISNULL((
-            SELECT SUM(d.Subtotal)
+            SELECT SUM(d.CantidadUtilizada * d.PrecioUnitarioHistorico)
             FROM DetalleReparacion d
             WHERE d.ReparacionId = r.ReparacionId
         ), 0.00)
         FROM Reparacion r
-        INNER JOIN inserted i ON r.ReparacionId = i.ReparacionId;
+        INNER JOIN inserted i ON r.ReparacionId = i.ReparacionId
+        INNER JOIN deleted d ON i.ReparacionId = d.ReparacionId
+        WHERE i.CostoManoObra <> d.CostoManoObra;
     END;
 END;
 GO
