@@ -62,7 +62,7 @@ CREATE TABLE Cliente (
     DUI VARCHAR(10) NULL,
     CarnetExtranjero VARCHAR(20) NULL,
     FechaRegistro DATETIME NOT NULL DEFAULT GETDATE(),
-    Estado CHAR NOT NULL DEFAULT 'A' CHECK (Estado IN ('A', 'I')) -- A = Activo, I = Inactivo
+    Estado CHAR NOT NULL DEFAULT 'A' CHECK (Estado IN ('A', 'I')), -- A = Activo, I = Inactivo
 
     CONSTRAINT CK_Cliente_Documento CHECK (
         (TipoDocumento = 'DUI' AND DUI IS NOT NULL AND CarnetExtranjero IS NULL)
